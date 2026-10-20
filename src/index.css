@@ -1,0 +1,556 @@
+/* Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Hind+Siliguri:wght@300;400;500;600;700&display=swap');
+
+@import "tailwindcss";
+
+@plugin "daisyui" {
+  themes: light --default, dark;
+}
+
+/* ─── Typography helpers ──────────────────────────────────── */
+.font-dm {
+  font-family: "DM Sans", sans-serif;
+  font-optical-sizing: auto;
+}
+
+.font-hind {
+  font-family: "Hind Siliguri", sans-serif;
+}
+
+/* ─── Base Reset ────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: "DM Sans", "Hind Siliguri", sans-serif;
+  font-weight: 400;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Typography ────────────────────────────────────────────── */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: "DM Sans", "Hind Siliguri", sans-serif;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+/* ─── Soft Pastel Theme Variables ──────────────────────────── */
+/* Lumora dynamic theme tokens — overridden at runtime by the
+   SiteSettingsProvider from admin-configured values (see
+   src/contexts/SiteSettingsContext.jsx). Components reference these
+   via var(--lum-*) so the admin can recolor the whole project. */
+:root {
+  --lum-primary: #8CC0EB;
+  --lum-accent: #5B9BD5;
+  --lum-text: #14202C;
+  --lum-bg: #FFF9D2;
+  --lum-cream: #FFF9D2;
+  --lum-peach: #FFEBCC;
+  --lum-skysoft: #BFDDF0;
+  --lum-legacy: #e8a803;
+  /* legacy gold -> follows accent */
+}
+
+[data-theme="light"] {
+  --color-bg: #FFFBF2;
+  --color-surface: #FFFFFF;
+  --color-surface-2: #F0F6FB;
+  --color-border: #E6EFF6;
+  --color-text: #1F3A52;
+  --color-text-muted: #5C7184;
+  --color-primary: var(--lum-primary);
+  --color-primary-deep: var(--lum-accent);
+  --color-peach: var(--lum-peach);
+  --color-cream: var(--lum-cream);
+  --color-skysoft: var(--lum-skysoft);
+
+  --shadow-sm: 0 1px 3px rgba(31, 58, 82, 0.06), 0 1px 2px rgba(31, 58, 82, 0.04);
+  --shadow-md: 0 6px 18px rgba(31, 58, 82, 0.07), 0 2px 6px rgba(31, 58, 82, 0.04);
+  --shadow-lg: 0 18px 44px rgba(31, 58, 82, 0.08), 0 6px 12px rgba(31, 58, 82, 0.04);
+  --shadow-xl: 0 30px 70px rgba(31, 58, 82, 0.10), 0 10px 20px rgba(31, 58, 82, 0.05);
+}
+
+[data-theme="dark"] {
+  --color-bg: var(--lum-text);
+  --color-surface: #1B2A38;
+  --color-surface-2: #213243;
+  --color-border: #2C4154;
+  --color-text: #EAF2F8;
+  --color-text-muted: #9DB2C4;
+  --color-primary: var(--lum-primary);
+  --color-primary-deep: var(--lum-accent);
+  --color-peach: var(--lum-peach);
+  --color-cream: var(--lum-cream);
+  --color-skysoft: var(--lum-skysoft);
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 6px 18px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 18px 44px rgba(0, 0, 0, 0.4);
+  --shadow-xl: 0 30px 70px rgba(0, 0, 0, 0.5);
+}
+
+/* ─── Dark Theme Overrides ──────────────────────────────────── */
+[data-theme="dark"] body {
+  background-color: var(--lum-text);
+  color: #EAF2F8;
+}
+
+[data-theme="dark"] .text-gray-600 {
+  color: #9DB2C4 !important;
+}
+
+[data-theme="dark"] .text-gray-700 {
+  color: #C2D3E0 !important;
+}
+
+[data-theme="dark"] .text-gray-800 {
+  color: #E2ECF3 !important;
+}
+
+[data-theme="dark"] .text-gray-500 {
+  color: #9DB2C4 !important;
+}
+
+[data-theme="dark"] .text-gray-400 {
+  color: #9DB2C4 !important;
+}
+
+[data-theme="dark"] .bg-white {
+  background-color: #1B2A38 !important;
+}
+
+[data-theme="dark"] .bg-amber-50,
+[data-theme="dark"] .bg-yellow-50,
+[data-theme="dark"] .bg-orange-50,
+[data-theme="dark"] .bg-cream,
+[data-theme="dark"] .bg-peach {
+  background-color: #1B2A38 !important;
+}
+
+/* ─── Soft Gradient Backdrops ───────────────────────────────── */
+.bg-soft-gradient {
+  background:
+    radial-gradient(1100px 520px at 88% -10%, rgba(140, 192, 235, 0.30), transparent 60%),
+    radial-gradient(900px 480px at 5% 8%, rgba(255, 235, 204, 0.55), transparent 55%),
+    radial-gradient(800px 600px at 60% 110%, rgba(191, 221, 240, 0.40), transparent 60%),
+    #FFFBF2;
+}
+
+.bg-soft-band {
+  background: linear-gradient(180deg, #FFFFFF 0%, #F0F6FB 100%);
+}
+
+/* ─── Smooth Theme Transitions ──────────────────────────────── */
+*,
+section,
+div,
+nav,
+footer,
+header,
+main,
+aside {
+  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+}
+
+/* ─── Soft Pill / Eyebrow ────────────────────────────────────── */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: "DM Sans", sans-serif;
+  font-weight: 600;
+  font-size: 0.8125rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-primary-deep);
+  background: rgba(140, 192, 235, 0.18);
+  border: 1px solid rgba(140, 192, 235, 0.35);
+  padding: 0.4rem 0.95rem;
+  border-radius: 999px;
+}
+
+/* ─── Professional Input Styles ─────────────────────────────── */
+.input,
+.select,
+.textarea {
+  font-family: "DM Sans", "Hind Siliguri", sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 400;
+  border-radius: 0.875rem !important;
+  border-width: 1.5px !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease !important;
+  height: 2.875rem;
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+  outline: none !important;
+  border-color: var(--lum-primary) !important;
+  box-shadow: 0 0 0 4px rgba(140, 192, 235, 0.18) !important;
+}
+
+.input-bordered,
+.select-bordered,
+.textarea-bordered {
+  border-color: #E6EFF6;
+}
+
+[data-theme="dark"] .input-bordered,
+[data-theme="dark"] .select-bordered,
+[data-theme="dark"] .textarea-bordered {
+  border-color: #2C4154;
+  background-color: #1B2A38;
+  color: #EAF2F8;
+}
+
+[data-theme="dark"] .input-bordered:focus,
+[data-theme="dark"] .select-bordered:focus,
+[data-theme="dark"] .textarea-bordered:focus {
+  border-color: var(--lum-primary) !important;
+  box-shadow: 0 0 0 4px rgba(140, 192, 235, 0.22) !important;
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  color: #A7B6C4;
+  font-weight: 400;
+}
+
+.textarea {
+  height: auto;
+  min-height: 7rem;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-radius: 0.875rem !important;
+}
+
+.file-input {
+  border-radius: 0.875rem !important;
+  border-width: 1.5px !important;
+  border-color: #E6EFF6;
+  font-family: "DM Sans", sans-serif;
+  font-size: 0.875rem;
+  height: 2.875rem;
+  cursor: pointer;
+}
+
+.file-input:focus {
+  border-color: var(--lum-primary) !important;
+  box-shadow: 0 0 0 4px rgba(140, 192, 235, 0.18) !important;
+}
+
+.label-text {
+  font-family: "DM Sans", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #33506A;
+  letter-spacing: 0.01em;
+}
+
+[data-theme="dark"] .label-text {
+  color: #C2D3E0;
+}
+
+/* ─── Button System (soft, minimal) ─────────────────────────── */
+.btn {
+  font-family: "DM Sans", sans-serif;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  letter-spacing: 0.01em;
+  border-radius: 0.875rem;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  border-width: 1.5px;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(91, 155, 213, 0.22);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn-sm {
+  font-size: 0.8125rem;
+  padding: 0.375rem 0.95rem;
+  border-radius: 0.625rem;
+  height: 2.125rem;
+}
+
+.btn-lg {
+  font-size: 1rem;
+  padding: 0.85rem 1.9rem;
+  border-radius: 1rem;
+  height: 3.375rem;
+}
+
+/* Primary: soft sky-blue */
+.btn-primary {
+  background: linear-gradient(135deg, var(--lum-primary), var(--lum-accent));
+  border-color: transparent;
+  color: var(--lum-text);
+  box-shadow: 0 6px 18px rgba(140, 192, 235, 0.40);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #9CC8EE, #6BA8DC);
+  color: var(--lum-text);
+  box-shadow: 0 14px 30px rgba(140, 192, 235, 0.50);
+}
+
+/* Peach outline */
+.btn-outline {
+  background: transparent;
+  border-color: #CDE3F2;
+  color: #33506A;
+}
+
+.btn-outline:hover {
+  background: #F0F6FB;
+  border-color: var(--lum-primary);
+  color: #1F3A52;
+}
+
+[data-theme="dark"] .btn-outline {
+  border-color: #2C4154;
+  color: #C2D3E0;
+}
+
+[data-theme="dark"] .btn-outline:hover {
+  background: #213243;
+  border-color: var(--lum-primary);
+  color: #EAF2F8;
+}
+
+.btn-ghost {
+  background: transparent;
+  border-color: transparent;
+}
+
+.btn-ghost:hover {
+  background: rgba(140, 192, 235, 0.14);
+  box-shadow: none;
+  transform: none;
+}
+
+.btn-circle {
+  border-radius: 50%;
+  padding: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  min-width: 2.5rem;
+}
+
+/* ─── Card System ────────────────────────────────────────────── */
+.card-professional {
+  background: var(--color-surface, #FFFFFF);
+  border-radius: 1.5rem;
+  border: 1px solid var(--color-border, #E6EFF6);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.3s ease, transform 0.3s ease, border-color 0.3s ease;
+}
+
+.card-professional:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-4px);
+  border-color: rgba(140, 192, 235, 0.5);
+}
+
+.card-hover {
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+  will-change: transform;
+}
+
+.card-hover:hover {
+  box-shadow: 0 24px 50px rgba(31, 58, 82, 0.12);
+  transform: translateY(-4px);
+}
+
+/* ─── Soft Surface Panels ────────────────────────────────────── */
+.soft-panel {
+  background: var(--color-surface, #FFFFFF);
+  border: 1px solid var(--color-border, #E6EFF6);
+  border-radius: 1.5rem;
+  box-shadow: var(--shadow-md);
+}
+
+/* ─── Section Spacing (breathing room) ──────────────────────── */
+.section-padding {
+  padding-top: 6.5rem;
+  padding-bottom: 6.5rem;
+}
+
+@media (max-width: 768px) {
+  .section-padding {
+    padding-top: 4rem;
+    padding-bottom: 4rem;
+  }
+}
+
+/* ─── Gradient Text (soft) ──────────────────────────────────── */
+.gradient-text {
+  background: linear-gradient(120deg, var(--lum-accent), var(--lum-primary) 55%, var(--lum-skysoft));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Badge Refinements ──────────────────────────────────────── */
+.badge {
+  font-family: "DM Sans", sans-serif;
+  font-weight: 600;
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+  border-radius: 0.5rem;
+  padding: 0.3rem 0.7rem;
+}
+
+/* ─── Divider ────────────────────────────────────────────────── */
+.divider {
+  font-family: "DM Sans", sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #A7B6C4;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* ─── Loading Spinner ────────────────────────────────────────── */
+.loading-spinner-brand {
+  border-color: var(--lum-primary);
+  border-top-color: transparent;
+}
+
+/* ─── Scrollbar ─────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBE0F0;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9CC8EE;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: #2C4154;
+}
+
+/* ─── Focus Ring ─────────────────────────────────────────────── */
+*:focus-visible {
+  outline: 2px solid var(--lum-primary);
+  outline-offset: 2px;
+}
+
+/* ─── Selection ──────────────────────────────────────────────── */
+::selection {
+  background: rgba(140, 192, 235, 0.28);
+  color: inherit;
+}
+
+/* ─── Collapse / Accordion ───────────────────────────────────── */
+.collapse {
+  border-radius: 1rem !important;
+  border: 1px solid #E6EFF6;
+  background: #FFFFFF;
+  overflow: hidden;
+}
+
+[data-theme="dark"] .collapse {
+  border-color: #2C4154;
+  background: #1B2A38;
+}
+
+.collapse-title {
+  font-family: "DM Sans", sans-serif;
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+/* ─── Modal ──────────────────────────────────────────────────── */
+.modal-box {
+  border-radius: 1.5rem !important;
+  box-shadow: 0 30px 70px rgba(31, 58, 82, 0.25) !important;
+}
+
+/* ─── Skeleton ───────────────────────────────────────────────── */
+.react-loading-skeleton {
+  border-radius: 0.75rem !important;
+}
+
+/* ─── Navbar Active Link Indicator ──────────────────────────── */
+.nav-link-active {
+  position: relative;
+}
+
+.nav-link-active::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--lum-primary);
+  border-radius: 1px;
+}
+
+/* ─── Page Transition ────────────────────────────────────────── */
+.page-enter {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* ─── Decorative soft blobs ─────────────────────────────────── */
+.soft-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* ─── Horizontal scroll (no scrollbar) for decorators ──────── */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
