@@ -1,69 +1,63 @@
 // src/pages/dashboard/user/MyBookings.jsx
-// FIXED VERSION - No more redirectToCheckout error!
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import axios from "axios";
 import { useAuth } from "../../../contexts/AuthContext";
-import { FiTrash2, FiCreditCard, FiCalendar, FiMapPin } from "react-icons/fi";
+import { FiTrash2, FiCreditCard, FiCalendar, FiMapPin, FiAlertCircle } from "react-icons/fi";
 import toast from "react-hot-toast";
 
 const MyBookings = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
   const [paymentLoading, setPaymentLoading] = useState(null);
 
-  useEffect(() => {
-    fetchBookings();
-  }, []);
+  const fetchBookings = useCallback(async () => {
+    if (!user?.email) return;
 
-  const fetchBookings = async () => {
     try {
+      setLoading(true);
+      setFetchError(null);
       const token = localStorage.getItem("lumora-token");
       const { data } = await axios.get(
-        `${import.meta.env.VITE_API_URL}/api/bookings/user/${user.email}`,
+        `${import.meta.env.VITE_API_URL}/api/bookings/user/${encodeURIComponent(
+          user.email.toLowerCase()
+        )}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      setBookings(data.bookings);
+      const list = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.bookings)
+        ? data.bookings
+        : [];
+      setBookings(list);
     } catch (error) {
       console.error("Error fetching bookings:", error);
-      toast.error("Failed to fetch bookings");
+      const msg = error.response?.data?.message || "Failed to fetch bookings";
+      setFetchError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.email]);
 
-  const handlePayment = async (booking) => {
-    setPaymentLoading(booking._id);
-
-    try {
-      const token = localStorage.getItem("lumora-token");
-
-      // Create checkout session
-      const { data } = await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/create-checkout-session`,
-        {
-          bookingId: booking._id,
-          amount: booking.serviceCost,
-          serviceName: booking.serviceName,
-          userEmail: user.email,
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      // FIXED: Use window.location.href instead of redirectToCheckout
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        toast.error("Failed to create checkout session");
-      }
-    } catch (error) {
-      console.error("Payment error:", error);
-      toast.error("Failed to process payment");
-      setPaymentLoading(null);
+  useEffect(() => {
+    if (user?.email) {
+      fetchBookings();
+    } else if (!authLoading && !user) {
+      setLoading(false);
     }
+  }, [user?.email, authLoading, fetchBookings]);
+
+  const handlePayment = (booking, type = "advance") => {
+    navigate(`/checkout/${booking._id}?type=${type}`, {
+      state: { booking, paymentType: type },
+    });
   };
 
   const handleCancelBooking = async (bookingId) => {
@@ -83,11 +77,43 @@ const MyBookings = () => {
     }
   };
 
-  const getStatusColor = (status, isPaid) => {
-    if (!isPaid) return "badge-warning";
-    if (status === "completed") return "badge-success";
-    if (status === "assigned") return "badge-info";
-    return "badge-primary";
+  // 50/50 Payment details and stage calculation
+  const getBookingPaymentState = (booking) => {
+    const total = Number(booking.serviceCost || booking.totalAmount || 0);
+    const advance =
+      booking.advance_amount != null
+        ? Number(booking.advance_amount)
+        : Math.round(total * 0.5);
+    const remaining =
+      booking.remaining_amount != null
+        ? Number(booking.remaining_amount)
+        : total - advance;
+
+    let stage = booking.payment_stage;
+    let isAdvancePaid = Boolean(booking.advance_paid);
+    let isFinalPaid = Boolean(booking.final_paid);
+    let isCompleted = Boolean(
+      booking.service_completed || booking.status === "completed"
+    );
+
+    if (isFinalPaid || booking.isPaid || stage === "fully_paid") {
+      stage = "fully_paid";
+    } else if (isAdvancePaid || stage === "advance_paid" || stage === "final_due") {
+      // Flexible 50/50: Remaining payment is unlocked and payable at any time!
+      stage = "final_due";
+    } else {
+      stage = "unpaid";
+    }
+
+    return {
+      total,
+      advance,
+      remaining,
+      stage, // 'unpaid' | 'final_due' | 'fully_paid'
+      isAdvancePaid,
+      isFinalPaid,
+      isCompleted,
+    };
   };
 
   return (
@@ -108,6 +134,22 @@ const MyBookings = () => {
         </p>
       </motion.div>
 
+      {/* Error state with retry */}
+      {fetchError && !loading && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <FiAlertCircle className="w-5 h-5 text-red-500" />
+            <span>{fetchError}</span>
+          </div>
+          <button
+            onClick={fetchBookings}
+            className="btn btn-xs bg-red-600 hover:bg-red-700 text-white border-none"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
       {loading ? (
         <div className="flex justify-center py-20">
           <span className="loading loading-spinner loading-lg text-[var(--lum-accent)]"></span>
@@ -127,120 +169,187 @@ const MyBookings = () => {
         </div>
       ) : (
         <div className="grid gap-6">
-          {bookings.map((booking, index) => (
-            <motion.div
-              key={booking._id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="bg-base-100 rounded-2xl shadow-xl p-6"
-            >
-              <div className="flex flex-col lg:flex-row justify-between">
-                <div className="flex-1">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="text-2xl font-bold mb-2">
-                        {booking.serviceName}
-                      </h3>
-                      <span
-                        className={`badge ${getStatusColor(
-                          booking.status,
-                          booking.isPaid
-                        )}`}
-                      >
-                        {booking.isPaid ? booking.status : "Payment Pending"}
-                      </span>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-2xl font-bold text-[var(--lum-accent)]">
-                        {/* ৳{booking.serviceCost.toLocaleString()} */}
-                        ৳{Number(booking.serviceCost || 0).toLocaleString()}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        {/* per {booking.serviceUnit} */}
-                        per {booking.serviceUnit || "event"}
-                      </p>
-                    </div>
-                  </div>
+          {bookings.map((booking, index) => {
+            const {
+              total,
+              advance,
+              remaining,
+              stage,
+              isCompleted,
+            } = getBookingPaymentState(booking);
 
-                  <div className="grid md:grid-cols-2 gap-4 mb-4">
-                    <div className="flex items-center space-x-2 text-gray-600">
-                      <FiCalendar />
-                      <span>
-                        {new Date(booking.bookingDate).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-2 text-gray-600">
-                      <FiMapPin />
-                      <span>{booking.location}</span>
-                    </div>
-                  </div>
+            const decoratorDisplayName =
+              booking.decoratorName || booking.decorator?.displayName;
 
-                  {booking.decoratorName && (
-                    <p className="text-sm text-gray-600">
-                      Decorator: <strong>{booking.decoratorName}</strong>
-                    </p>
-                  )}
+            return (
+              <motion.div
+                key={booking._id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className="bg-base-100 rounded-2xl shadow-xl p-6"
+              >
+                <div className="flex flex-col lg:flex-row justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <h3 className="text-2xl font-bold mb-2">
+                          {booking.serviceName || "Decoration Service"}
+                        </h3>
 
-                  {booking.notes && (
-                    <p className="text-sm text-gray-600 mt-2">
-                      Notes: {booking.notes}
-                    </p>
-                  )}
-                </div>
-
-                <div className="flex lg:flex-col gap-2 mt-4 lg:mt-0 lg:ml-4">
-                  {!booking.isPaid && (
-                    <>
-                      <button
-                        onClick={() => handlePayment(booking)}
-                        disabled={paymentLoading === booking._id}
-                        className="btn btn-sm bg-gradient-to-r from-[var(--lum-primary)] to-[var(--lum-accent)] text-white border-none hover:scale-105 transition-transform"
-                      >
-                        {paymentLoading === booking._id ? (
-                          <>
-                            <span className="loading loading-spinner loading-xs"></span>
-                            Processing...
-                          </>
-                        ) : (
-                          <>
-                            <FiCreditCard /> Pay Now
-                          </>
+                        {/* Payment Stage Badges */}
+                        {stage === "unpaid" && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-[#f59e0b] text-white">
+                            Payment Pending
+                          </span>
                         )}
-                      </button>
-                      <button
-                        onClick={() => handleCancelBooking(booking._id)}
-                        disabled={paymentLoading === booking._id}
-                        className="btn btn-sm btn-error btn-outline"
-                      >
-                        <FiTrash2 /> Cancel
-                      </button>
-                    </>
-                  )}
-                  {booking.isPaid && (
-                    <div className="flex items-center space-x-2">
-                      <div className="badge badge-success badge-lg gap-2">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          className="inline-block w-4 h-4 stroke-current"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M5 13l4 4L19 7"
-                          ></path>
-                        </svg>
-                        Paid
+                        {stage === "final_due" && !isCompleted && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-[#5b9bd5] text-white">
+                            Advance Paid · Work in progress
+                          </span>
+                        )}
+                        {stage === "final_due" && isCompleted && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-[#f59e0b] text-white">
+                            Final Payment Due · Service completed
+                          </span>
+                        )}
+                        {stage === "fully_paid" && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-[#d1fae5] text-[#065f46]">
+                            Fully Paid
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-[var(--lum-accent)]">
+                          ৳{total.toLocaleString()}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          per {booking.serviceUnit || "event"}
+                        </p>
                       </div>
                     </div>
-                  )}
+
+                    <div className="grid md:grid-cols-2 gap-4 mb-4">
+                      <div className="flex items-center space-x-2 text-gray-600">
+                        <FiCalendar />
+                        <span>
+                          {booking.bookingDate
+                            ? new Date(booking.bookingDate).toLocaleDateString()
+                            : "Date not specified"}
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-2 text-gray-600">
+                        <FiMapPin />
+                        <span>{booking.location || "Dhaka, Bangladesh"}</span>
+                      </div>
+                    </div>
+
+                    {decoratorDisplayName ? (
+                      <p className="text-sm text-gray-600">
+                        Decorator: <strong>{decoratorDisplayName}</strong>
+                      </p>
+                    ) : booking.noDecoratorAvailable ? (
+                      <p className="text-sm text-amber-600 font-medium">
+                        Decorator: <em>No decorator available for this service</em>
+                      </p>
+                    ) : null}
+
+                    {booking.notes && (
+                      <p className="text-sm text-gray-600 mt-2">
+                        Notes: {booking.notes}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Actions Column */}
+                  <div className="flex lg:flex-col gap-2 mt-4 lg:mt-0 lg:ml-4 items-start lg:items-end justify-start">
+                    {/* Stage 1: Unpaid -> Pay 50% Advance & Cancel */}
+                    {stage === "unpaid" && (
+                      <>
+                        <button
+                          onClick={() => handlePayment(booking, "advance")}
+                          disabled={paymentLoading === booking._id}
+                          className="btn btn-sm bg-[#5b9bd5] hover:bg-[#4a89c4] text-white border-none shadow-sm flex items-center gap-1.5"
+                        >
+                          <FiCreditCard /> Pay 50% Advance · ৳{advance.toLocaleString()}
+                        </button>
+                        <button
+                          onClick={() => handleCancelBooking(booking._id)}
+                          disabled={paymentLoading === booking._id}
+                          className="btn btn-sm btn-outline border-gray-300 text-gray-700 hover:bg-gray-100 flex items-center gap-1.5"
+                        >
+                          <FiTrash2 /> Cancel
+                        </button>
+                      </>
+                    )}
+
+                    {/* Stage 2 / Remaining Payment: Enabled at any time! */}
+                    {stage === "final_due" && (
+                      <button
+                        onClick={() => handlePayment(booking, "final")}
+                        disabled={paymentLoading === booking._id}
+                        className="btn btn-sm bg-[#5b9bd5] hover:bg-[#4a89c4] text-white border-none shadow-sm flex items-center gap-1.5"
+                      >
+                        <FiCreditCard /> Pay Remaining 50% · ৳{remaining.toLocaleString()}
+                      </button>
+                    )}
+
+                    {/* Stage 3: Fully Paid */}
+                    {stage === "fully_paid" && (
+                      <div className="btn btn-sm bg-[#10b981] hover:bg-[#10b981] text-white border-none cursor-default flex items-center gap-1 px-4">
+                        ✓ Paid
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          ))}
+
+                {/* Slim Progress Strip at Bottom of Each Card */}
+                <div className="mt-5 pt-3 border-t border-gray-100">
+                  <div className="flex justify-between items-center text-xs text-gray-500 mb-1.5">
+                    {stage === "unpaid" && (
+                      <>
+                        <span>Advance 50% · ৳{advance.toLocaleString()} · Unpaid</span>
+                        <span>Final 50% · ৳{remaining.toLocaleString()} · Locked</span>
+                      </>
+                    )}
+                    {stage === "final_due" && (
+                      <>
+                        <span className="text-gray-600 font-medium">Advance 50% · Paid</span>
+                        <span className="text-gray-600 font-medium">Final 50% · ৳{remaining.toLocaleString()} · Due now</span>
+                      </>
+                    )}
+                    {stage === "fully_paid" && (
+                      <>
+                        <span className="text-gray-600 font-medium">Advance 50% · Paid</span>
+                        <span className="text-gray-600 font-medium">Final 50% · Paid</span>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* Left Bar: Advance 50% */}
+                    <div
+                      className={`h-1.5 sm:h-2 rounded-full transition-colors ${
+                        stage === "unpaid" ? "bg-gray-200" : "bg-[#10b981]"
+                      }`}
+                    />
+
+                    {/* Right Bar: Final 50% */}
+                    <div
+                      className={`h-1.5 sm:h-2 rounded-full transition-colors ${
+                        stage === "fully_paid"
+                          ? "bg-[#10b981]"
+                          : stage === "final_due"
+                          ? "bg-[#f59e0b]"
+                          : "bg-gray-200"
+                      }`}
+                    />
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
       )}
     </div>

@@ -44,9 +44,9 @@ const ManageBookings = () => {
       const decorator = decorators.find((d) => d.email === selectedDecorator);
 
       await axios.patch(
-        `${import.meta.env.VITE_API_URL}/api/bookings/${selectedBooking._id
-        }/assign`,
+        `${import.meta.env.VITE_API_URL}/api/bookings/${selectedBooking._id}/assign`,
         {
+          decoratorId: decorator._id,
           decoratorEmail: decorator.email,
           decoratorName: decorator.displayName,
         },
@@ -58,7 +58,7 @@ const ManageBookings = () => {
       setSelectedDecorator("");
       fetchData();
     } catch (error) {
-      toast.error("Failed to assign decorator");
+      toast.error(error.response?.data?.message || "Failed to assign decorator");
     }
   };
 
@@ -100,10 +100,19 @@ const ManageBookings = () => {
                     </td>
                     <td>
                       <span
-                        className={`badge ${booking.isPaid ? "badge-success" : "badge-warning"
-                          }`}
+                        className={`badge ${
+                          booking.isPaid || booking.payment_stage === "fully_paid"
+                            ? "badge-success"
+                            : booking.advance_paid || booking.payment_stage === "advance_paid" || booking.payment_stage === "final_due"
+                            ? "badge-info"
+                            : "badge-warning"
+                        }`}
                       >
-                        {booking.isPaid ? "Paid" : "Pending"}
+                        {booking.isPaid || booking.payment_stage === "fully_paid"
+                          ? "Fully Paid"
+                          : booking.advance_paid || booking.payment_stage === "advance_paid" || booking.payment_stage === "final_due"
+                          ? "Advance Paid"
+                          : "Pending"}
                       </span>
                     </td>
                     <td>{booking.decoratorName || "-"}</td>
@@ -113,12 +122,19 @@ const ManageBookings = () => {
                       </span>
                     </td>
                     <td>
-                      {booking.isPaid && !booking.decoratorEmail && (
+                      {(booking.isPaid || booking.advance_paid || booking.payment_stage === "advance_paid") && (
                         <button
-                          onClick={() => setSelectedBooking(booking)}
-                          className="btn btn-sm btn-primary"
+                          onClick={() => {
+                            setSelectedBooking(booking);
+                            setSelectedDecorator(booking.decoratorEmail || "");
+                          }}
+                          className={`btn btn-sm ${
+                            booking.decoratorEmail
+                              ? "btn-outline btn-info"
+                              : "btn-primary"
+                          }`}
                         >
-                          Assign
+                          {booking.decoratorEmail ? "Change" : "Assign"}
                         </button>
                       )}
                     </td>
@@ -134,29 +150,39 @@ const ManageBookings = () => {
       {selectedBooking && (
         <div className="modal modal-open">
           <div className="modal-box">
-            <h3 className="font-bold text-2xl mb-6">Assign Decorator</h3>
+            <h3 className="font-bold text-2xl mb-2">
+              {selectedBooking.decoratorEmail ? "Change" : "Assign"} Decorator
+            </h3>
+            <p className="text-sm text-gray-500 mb-6">
+              Booking: <span className="font-semibold text-gray-800">{selectedBooking.serviceName}</span> for {selectedBooking.userName}
+            </p>
 
             <div className="form-control mb-4">
               <label className="label">
-                <span className="label-text">Select Decorator</span>
+                <span className="label-text font-medium">Select Approved Decorator</span>
               </label>
               <select
                 value={selectedDecorator}
                 onChange={(e) => setSelectedDecorator(e.target.value)}
-                className="select select-bordered"
+                className="select select-bordered w-full"
               >
                 <option value="">Choose a decorator</option>
-                {decorators.map((dec) => (
-                  <option key={dec.email} value={dec.email}>
-                    {dec.displayName} - {dec.specialty || "General"}
-                  </option>
-                ))}
+                {decorators
+                  .filter((dec) => dec.isApproved !== false)
+                  .map((dec) => (
+                    <option key={dec.email} value={dec.email}>
+                      {dec.displayName} {dec.phone ? `(${dec.phone})` : ""} - {dec.servicesProvided?.join(", ") || dec.specialty || "Approved Decorator"}
+                    </option>
+                  ))}
               </select>
             </div>
 
             <div className="modal-action">
               <button
-                onClick={() => setSelectedBooking(null)}
+                onClick={() => {
+                  setSelectedBooking(null);
+                  setSelectedDecorator("");
+                }}
                 className="btn btn-ghost"
               >
                 Cancel
@@ -165,7 +191,7 @@ const ManageBookings = () => {
                 onClick={handleAssignDecorator}
                 className="btn btn-primary"
               >
-                Assign
+                Confirm Assignment
               </button>
             </div>
           </div>

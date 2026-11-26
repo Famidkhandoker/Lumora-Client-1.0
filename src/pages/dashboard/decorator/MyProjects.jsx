@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import axios from "axios";
 import { useAuth } from "../../../contexts/AuthContext";
-import { FiCalendar, FiMapPin } from "react-icons/fi";
+import { FiCalendar, FiMapPin, FiCheckCircle } from "react-icons/fi";
 import toast from "react-hot-toast";
 
 const MyProjects = () => {
@@ -52,7 +52,40 @@ const MyProjects = () => {
       toast.success("Project status updated");
       fetchProjects();
     } catch (error) {
-      toast.error("Failed to update status");
+      toast.error(error.response?.data?.message || "Failed to update status");
+    }
+  };
+
+  const handleMarkServiceCompleted = async (project) => {
+    const isAdvanceDone =
+      project.advance_paid ||
+      project.isPaid ||
+      project.payment_stage === "advance_paid" ||
+      project.payment_stage === "fully_paid";
+
+    if (!isAdvanceDone) {
+      toast.error(
+        "Advance payment (50%) must be paid before marking service as completed."
+      );
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("lumora-token");
+      await axios.patch(
+        `${import.meta.env.VITE_API_URL}/api/bookings/${project._id}/service-complete`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      toast.success(
+        "Service marked as completed! Customer can now pay the remaining 50%."
+      );
+      fetchProjects();
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Failed to mark service completed"
+      );
     }
   };
 
@@ -161,6 +194,30 @@ const MyProjects = () => {
                         </option>
                       ))}
                     </select>
+
+                    {/* Small Mark as Completed button */}
+                    {project.status !== "completed" &&
+                      !project.service_completed && (
+                        <button
+                          type="button"
+                          onClick={() => handleMarkServiceCompleted(project)}
+                          disabled={!project.advance_paid && !project.isPaid}
+                          className="btn btn-xs sm:btn-sm btn-outline btn-success w-full mt-2 gap-1.5"
+                          title={
+                            !project.advance_paid && !project.isPaid
+                              ? "Advance payment (50%) required before completing service"
+                              : "Mark service as completed to unlock customer final payment"
+                          }
+                        >
+                          <FiCheckCircle size={14} /> Mark as Completed
+                        </button>
+                      )}
+
+                    {project.service_completed && (
+                      <div className="text-xs text-emerald-600 font-semibold flex items-center justify-end gap-1 mt-2">
+                        <span>✓ Service Completed</span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="text-right">

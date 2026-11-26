@@ -13,6 +13,7 @@ import ServiceCoverageMap from "../pages/ServiceCoverageMap";
 import ErrorPage from "../pages/ErrorPage";
 import PaymentSuccess from "../pages/PaymentSuccess";
 import PaymentCancel from "../pages/PaymentCancel";
+import Checkout from "../pages/Checkout";
 import PrivateRoute from "./PrivateRoute";
 import AdminRoute from "./AdminRoute";
 import DecoratorRoute from "./DecoratorRoute";
@@ -92,6 +93,26 @@ export const router = createBrowserRouter([
         ),
       },
     ],
+  },
+
+  // Dedicated Stripe Checkout Page (Standalone, matching reference image)
+  {
+    path: "/checkout/:bookingId",
+    element: (
+      <PrivateRoute>
+        <Checkout />
+      </PrivateRoute>
+    ),
+    errorElement: <ErrorPage />,
+  },
+  {
+    path: "/checkout",
+    element: (
+      <PrivateRoute>
+        <Checkout />
+      </PrivateRoute>
+    ),
+    errorElement: <ErrorPage />,
   },
 
   // Dashboard Routes

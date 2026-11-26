@@ -24,26 +24,55 @@ const PaymentSuccess = () => {
   const verifyPayment = async () => {
     const sessionId = searchParams.get("session_id");
     const bookingId = searchParams.get("booking_id");
+    const paymentId = searchParams.get("payment_id");
 
-    if (!sessionId || !bookingId) {
+    if (!sessionId && !paymentId && !bookingId) {
       navigate("/dashboard/my-bookings");
       return;
     }
 
-    try {
-      const token = localStorage.getItem("lumora-token");
-      const { data } = await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/verify-payment`,
-        { sessionId, bookingId },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+    if (sessionId) {
+      try {
+        const token = localStorage.getItem("lumora-token");
+        const { data } = await axios.post(
+          `${import.meta.env.VITE_API_URL}/api/verify-payment`,
+          { sessionId, bookingId },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
 
-      if (data.success) {
-        setPaymentDetails(data.payment);
+        if (data.success) {
+          setPaymentDetails(data.payment);
+        }
+      } catch (error) {
+        console.error("Verification error:", error);
+      } finally {
+        setVerifying(false);
       }
-    } catch (error) {
-      console.error("Verification error:", error);
-    } finally {
+    } else {
+      // Payment completed via direct checkout
+      if (bookingId) {
+        try {
+          const token = localStorage.getItem("lumora-token");
+          const { data } = await axios.get(
+            `${import.meta.env.VITE_API_URL}/api/bookings/${bookingId}`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          const type = searchParams.get("type");
+          const total = Number(data.serviceCost || data.totalAmount || 0);
+          const advance = data.advance_amount != null ? data.advance_amount : Math.round(total * 0.5);
+          const remaining = data.remaining_amount != null ? data.remaining_amount : total - advance;
+
+          setPaymentDetails({
+            serviceName: `${data.serviceName} - ${type === "final" ? "Final (50%)" : "Advance (50%)"}`,
+            amount: type === "final" ? remaining : advance,
+            transactionId: paymentId || `txn_${type || "direct"}_${Date.now()}`,
+            userEmail: data.userEmail,
+            createdAt: new Date(),
+          });
+        } catch (e) {
+          console.error("Fetch booking error:", e);
+        }
+      }
       setVerifying(false);
     }
   };

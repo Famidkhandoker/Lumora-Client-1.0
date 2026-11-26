@@ -72,8 +72,20 @@ const PaymentHistory = () => {
                     <FiCheckCircle className="text-green-600" size={24} />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold">{payment.serviceName}</h3>
-                    <div className="flex items-center space-x-2 text-sm text-gray-600">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-lg font-bold">
+                        {payment.originalServiceName || payment.serviceName}
+                      </h3>
+                      {(payment.paymentLabel || payment.paymentType) && (
+                        <span className="badge badge-sm badge-info font-medium">
+                          {payment.paymentLabel ||
+                            (payment.paymentType === "advance"
+                              ? "Advance (50%)"
+                              : "Final (50%)")}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center space-x-2 text-sm text-gray-600 mt-1">
                       <FiCalendar size={14} />
                       <span>
                         {new Date(payment.createdAt).toLocaleDateString()}
@@ -87,7 +99,7 @@ const PaymentHistory = () => {
 
                 <div className="text-right">
                   <p className="text-2xl font-bold text-green-600">
-                    ৳{payment.amount}
+                    ৳{Number(payment.amount || 0).toLocaleString()}
                   </p>
                   <span className="badge badge-success badge-sm">Paid</span>
                 </div>

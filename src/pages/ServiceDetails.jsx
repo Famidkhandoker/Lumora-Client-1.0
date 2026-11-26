@@ -27,6 +27,7 @@ const ServiceDetails = () => {
 
   const [bookingData, setBookingData] = useState({
     bookingDate: "",
+    bookingTime: "",
     location: "",
     notes: "",
   });
@@ -463,6 +464,20 @@ const ServiceDetails = () => {
                 onChange={(e) => setBookingData({ ...bookingData, bookingDate: e.target.value })}
                 className="input input-bordered w-full text-sm"
                 min={new Date().toISOString().split("T")[0]}
+                required
+              />
+            </div>
+
+            {/* Event Time */}
+            <div className="form-control">
+              <label className="label pb-1.5">
+                <span className="label-text">Event time <span className="text-error">*</span></span>
+              </label>
+              <input
+                type="time"
+                value={bookingData.bookingTime}
+                onChange={(e) => setBookingData({ ...bookingData, bookingTime: e.target.value })}
+                className="input input-bordered w-full text-sm"
                 required
               />
             </div>
